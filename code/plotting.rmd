@@ -1,0 +1,186 @@
+---
+title: Whole embryo HDCA - plotting ST
+author: Raphaël Mauron
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+# HDCA - Whole Embryo Project
+
+## Set up
+
+### Set project library
+
+```{r setup, include=FALSE}
+#.libPaths("/home/rstudio/renv/library/R-4.3/aarch64-unknown-linux-gnu/")
+.libPaths("/home/rstudio/.cache/R/renv/sandbox/R-4.3/aarch64-unknown-linux-gnu/25ebdc09")
+
+lapply(.libPaths()[1], list.files) # check library
+
+knitr::opts_chunk$set(echo = TRUE) # plot when knitting
+
+rm(list = ls()) # empty object loaded
+```
+
+
+### Load library
+
+```{r}
+package.list <- c("semla", "Seurat", "viridis", "dplyr", "ggplot2", "gtools", "patchwork",
+                  "RColorBrewer")
+invisible(lapply(package.list, function(element) {
+  library(element, character.only = TRUE)
+}))
+rm(package.list)
+```
+
+
+### Set directory
+
+```{r}
+setwd("/home/rstudio")
+getwd()
+savepath <- "./results/"
+```
+
+
+### You can organize how to save plots
+
+```{r}
+# create plot.directory for each section
+plot.dir <- paste0(c(savepath, "save-plot"), collapse = "/")
+if (dir.exists(plot.dir)) {
+} else {
+  dir.create(plot.dir, recursive = TRUE)
+}
+```
+
+
+### Set seed for project
+
+```{r}
+set.seed(1)
+```
+
+
+### Load objects
+
+```{r}
+section_cluster <- readRDS(paste0("section_cluster_list_obj", ".rds"))
+```
+
+
+### Plotting
+
+#### 1. Select embryo section
+
+"XDD410-section-152"   "XDD410-section-162"   "XDD410-section-173"  
+"XDD410-section-188"   "XDD421-section-8"     "XDD421-section-20-31"
+"XDD421-section-41"    "XDD421-section-53"    "XDD421-section-63"   
+"XDD421-section-74"    "XDD421-section-86"    "XDD421-section-98"   
+"XDD469-section-94"    "XDD469-section-105"   "XDD419-section-37"   
+"XDD419-section-46"    "XDD469-section-13"    "XDD469-section-34"   
+"XDD469-section-52"    "XDD469-section-76"    "XDD410-section-200"  
+"XDD410-section-213"   "XDD410-section-226"   "XDD410-section-238"  
+
+
+```{r}
+# change here
+embryo_section <- "XDD410-section-152"
+```
+
+```{r}
+object  <- section_cluster[[embryo_section]]
+```
+
+
+#### 2. Plot a gene onto the section
+
+```{r}
+# change here
+gene_of_interest <- "MYH6"
+
+p <- MapFeatures(object,
+            features = gene_of_interest,
+            image_use = "raw",
+            pt_size = 1.7
+          )  &
+  labs(title = embryo_section)
+p
+```
+
+```{r}
+#save plot
+pdf(paste0(plot.dir, "/", embryo_section, "_feature_plot_", "gene_of_interest", ".pdf"), width = 10, height = 10)
+print(p)
+dev.off()
+```
+
+
+#### 3. Plot a list of genes, side by side
+
+```{r}
+# change here
+list_of_genes <- c("CXCL12", "PKDCC", "GASK1B")
+
+p <- MapFeatures(object,
+            features = list_of_genes,
+            image_use = "raw", # set to NULL if you don't want the overlap with H&E
+            pt_size = 0.8
+          )  &
+  labs(title = embryo_section)
+p
+```
+
+```{r}
+#save plot
+# NOTE: you can change saving dimentions in case the dots are to big or too small
+pdf(paste0(plot.dir, "/", embryo_section, "_feature_plot_", paste(list_of_genes, collapse = "_"), ".pdf"), width = 10, height = 10)
+print(p)
+dev.off()
+```
+
+
+#### 4. Plot cluster 
+
+##### All together
+
+```{r}
+p <- MapLabels(object,
+          column_name = "seurat_clusters",
+          ncol = 1,
+          pt_size = 1.7) &
+  theme(legend.position = "right")  &
+  labs(title = paste0("Clusters on ", embryo_section))
+p
+```
+
+```{r}
+#save plot
+pdf(paste0(plot.dir, "/", embryo_section, "_all_clusters", ".pdf"), width = 10, height = 10)
+print(p)
+dev.off()
+```
+
+
+##### 1 plot per cluster
+
+```{r}
+# Plot clusters in split view
+p <- MapLabels(object, column_name = "seurat_clusters", pt_size = 0.8, split_labels = TRUE, ncol = 4) & 
+  labs(title = embryo_section)
+p
+```
+
+```{r}
+#save plot
+pdf(paste0(plot.dir, "/", embryo_section, "_individual_clusters", ".pdf"), width = 10, height = 15)
+print(p)
+dev.off()
+```
+
+```{r}
+sessionInfo()
+```
+
